@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import catRouter from "./routes/cat.js";
+
+
 
 dotenv.config();
 
@@ -8,13 +11,25 @@ const app = express();
 console.log(process.env.KEY);
 
 //* Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors());// enable CORS for all routes
+app.use(express.json());// parse JSON data from request bodies eg. data from the client (frontend like name, passpword, email, etc)
 
 //* Routes
 app.get("/", (req, res) => {
   res.json("Simple Animal App");
 });
+
+app.use("/cat", catRouter);// middleware for mounting the cat route
+
+
+
+//GET  animals
+app.get("/cat");
+
+
+
+app.get("/cat/:imput", );
+
 
 
 //* Global Error Handler

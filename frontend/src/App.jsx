@@ -37,7 +37,7 @@ function App() {
 
     try {
       //? let's fetch the data (10 cats of searched breed) via our backend
-      const response = await fetch(`???????`);
+      const response = await fetch(`api/cat/${breed}`);//dynamic imput is from  router.get("/:imput", searchByBreed); in app.js
       const res = await response.json();
       if (response.ok) {
         setInfo(res);
