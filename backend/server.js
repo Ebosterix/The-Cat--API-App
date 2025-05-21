@@ -3,34 +3,21 @@ import cors from "cors";
 import dotenv from "dotenv";
 import catRouter from "./routes/cat.js";
 
-
-
 dotenv.config();
 
 const app = express();
 console.log(process.env.KEY);
 
 //* Middleware
-app.use(cors());// enable CORS for all routes
-app.use(express.json());// parse JSON data from request bodies eg. data from the client (frontend like name, passpword, email, etc)
+app.use(cors()); // enable CORS for all routes
+app.use(express.json()); // parse JSON data from request bodies eg. data from the client (frontend like name, passpword, email, etc)
 
 //* Routes
 app.get("/", (req, res) => {
   res.json("Simple Animal App");
 });
 
-app.use("/cat", catRouter);// middleware for mounting the cat route
-
-
-
-//GET  animals
-app.get("/cat");
-
-
-
-app.get("/cat/:imput", );
-
-
+app.use("/cat", catRouter); // middleware for mounting the cat route
 
 //* Global Error Handler
 app.use((err, req, res, next) => {
@@ -40,13 +27,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-
-const port = process.env.PORT || 3003; // our api KEY stays in 
+const port = process.env.PORT || 3003; // our api KEY stays in
 
 app.listen(port, () => {
   if (process.env.NODE_ENV === "development") {
     console.log(`development: server is listening @ ${port}`);
-  }else {
+  } else {
     console.log(`production: server is listening @ ${port}`);
   }
   //console.log(`server is listening @ ${port}`);
