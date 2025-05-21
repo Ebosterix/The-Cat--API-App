@@ -27,7 +27,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const port = process.env.PORT || 3003; // our api KEY stays in
+const port = process.env.PORT || 3003; // our api KEY stays .env file
 
 app.listen(port, () => {
   if (process.env.NODE_ENV === "development") {

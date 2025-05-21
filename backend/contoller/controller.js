@@ -17,41 +17,64 @@ export const searchByBreed = async (req, res) => {
       `https://api.thecatapi.com/v1/images/search?limit=10&breed_ids=${imput}&api_key=${apiKey}`
     );
 
+    // Get text first, regardless of ok status, to avoid premature .json() errors
+    const externalApiTextResponse = await externalApiResponse.text();
+
     if (!externalApiResponse.ok) {
-      let errorPayload = { error: "Error fetching data from the external API" };
+      let errorPayload = {
+        error: `Error fetching data from the external API (status: ${externalApiResponse.status})`,
+      };
       try {
-        // Try to include details from the external API's error response
-        const externalErrorData = await externalApiResponse.json();
+        // Try to parse the text response as JSON, it might be an error object from TheCatAPI
+        const externalErrorData = JSON.parse(externalApiTextResponse);
         errorPayload.details = externalErrorData;
       } catch (e) {
-        // External API error response might not be JSON, or no body
-        errorPayload.details = await externalApiResponse.text();
+        // External API error response might not be JSON, send a snippet of the text
+        errorPayload.details =
+          externalApiTextResponse.substring(0, 200) +
+          (externalApiTextResponse.length > 200 ? "..." : "");
       }
-      return res.status(externalApiResponse.status).json(errorPayload);
+      // It's important that our backend sends a JSON response to our frontend
+      return res
+        .status(
+          externalApiResponse.status < 500 ? externalApiResponse.status : 502
+        )
+        .json(errorPayload);
     }
 
-    const data = await externalApiResponse.json();
-
-    if (data && data.length > 0) {
-      res.status(200).json(data); // Send the fetched cat data
-    } else {
-      // No cats found for this breed, but the API call itself was successful
-      res.status(200).json([]); // Send an empty array as per frontend expectation
-    }
-  } catch (error) {
-    console.error("Server Error:", error);
-    // Check if the error is due to parsing non-JSON from external API
-    if (
-      error instanceof SyntaxError &&
-      error.message.includes("Unexpected token")
-    ) {
+    // If externalApiResponse.ok, try to parse the text response as data
+    try {
+      const data = JSON.parse(externalApiTextResponse);
+      if (data && data.length >= 0) {
+        // Allow empty array for successful no-results
+        res.status(200).json(data);
+      } else {
+        // This case should ideally not be hit if TheCatAPI sends valid empty arrays
+        console.warn(
+          "Received unexpected data structure from TheCatAPI (expected array):",
+          data
+        );
+        res.status(200).json([]);
+      }
+    } catch (parseError) {
+      // This happens if TheCatAPI said OK but sent non-JSON
+      console.error(
+        "Failed to parse successful response from TheCatAPI:",
+        parseError
+      );
+      console.error(
+        "TheCatAPI response text (first 500 chars):",
+        externalApiTextResponse.substring(0, 500)
+      );
       res
         .status(502)
         .json({
-          error: "Bad Gateway: Invalid response from external cat API.",
+          error: "Bad Gateway: Invalid JSON response from external cat API.",
         });
-    } else {
-      res.status(500).json({ error: "Internal Server Error" });
     }
+  } catch (error) {
+    // This catches other errors, like network issues calling TheCatAPI or unexpected internal errors
+    console.error("Server Error in searchByBreed:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
